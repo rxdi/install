@@ -18,7 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@rxdi/core": "^0.0.182",
+    "@rxdi/core": "^0.0.184",
     "bluebird": "^3.5.1",
     "fs": "0.0.1-security",
     "glob": "^7.1.2",
