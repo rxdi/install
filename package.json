@@ -1,0 +1,31 @@
+{
+  "name": "@rxdi/install",
+  "version": "0.0.181",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "rxdi-install": "index.js"
+  },
+  "ipfs": {
+    "ipfsProvider": "https://ipfs.io/ipfs/",
+    "dependencies": [
+      "QmWtJLqyokMZE37DgncpY5HhFvtFQieBzMPDQ318aJeTw6"
+    ]
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@rxdi/core": "0.0.179",
+    "bluebird": "^3.5.1",
+    "fs": "0.0.1-security",
+    "glob": "^7.1.2",
+    "mkdirp": "^0.5.1",
+    "typescript": "^2.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^10.5.2"
+  }
+}
