@@ -16,7 +16,7 @@ rxdi-install
 Will read `package.json` in particular `ipfs` object with properties:
 ```json
   "ipfs": {
-    "ipfsProvider": "https://ipfs.io/ipfs/",
+    "provider": "https://ipfs.io/ipfs/",
     "dependencies": [
       "QmWtJLqyokMZE37DgncpY5HhFvtFQieBzMPDQ318aJeTw6"
     ]
@@ -25,6 +25,26 @@ Will read `package.json` in particular `ipfs` object with properties:
 
 #### Install single dependency:
 
+Short version defaults to `https://ipfs.io/ipfs/`
+```bash
+rxdi-install QmWtJLqyokMZE37DgncpY5HhFvtFQieBzMPDQ318aJeTw6
+```
+
+Long version
 ```bash
 rxdi-install --hash=QmWtJLqyokMZE37DgncpY5HhFvtFQieBzMPDQ318aJeTw6 --provider=https://ipfs.io/ipfs/
+```
+
+#### Same command is exposed when you install `@rxdi/core` global syntax is different
+```bash
+npm i -g @rxdi/core
+```
+
+```bash
+rxdi install QmWtJLqyokMZE37DgncpY5HhFvtFQieBzMPDQ318aJeTw6
+```
+
+Even shorter
+```bash
+rxdi i QmWtJLqyokMZE37DgncpY5HhFvtFQieBzMPDQ318aJeTw6
 ```
