@@ -4,28 +4,24 @@ import { FileService } from '@rxdi/core/services/file';
 import { Container } from '@rxdi/core/container/Container';
 import { ExternalImporter, ExternalImporterIpfsConfig } from '@rxdi/core/services/external-importer';
 import { Observable } from 'rxjs';
-import { take } from 'rxjs/operators';
 
 const fileService = Container.get(FileService);
-const dependencies: ExternalImporterIpfsConfig[] = [];
-let ipfsProvider = '';
-let hash = '';
 
 export interface PackagesConfig {
     dependencies: string[];
-    ipfsProvider: string;
+    provider: string;
 }
 
 export const loadDeps = (currentPackage: PackagesConfig, dependencies: ExternalImporterIpfsConfig[]) => {
     if (!currentPackage) {
         throw new Error('Missing ipfs config!');
     }
-    if (!currentPackage.ipfsProvider) {
+    if (!currentPackage.provider) {
         throw new Error('Missing ipfsProvider package.json');
     }
-    const ipfsProvider = currentPackage.ipfsProvider;
+    const provider = currentPackage.provider;
     if (currentPackage.dependencies) {
-        currentPackage.dependencies.map(hash => dependencies.push({ hash, ipfsProvider }));
+        currentPackage.dependencies.map(hash => dependencies.push({ hash, provider }));
     }
 };
 
@@ -33,17 +29,29 @@ export const DownloadDependencies = (dependencies: ExternalImporterIpfsConfig[])
     return Container.get(ExternalImporter).downloadIpfsModules(dependencies);
 };
 
+const dependencies: ExternalImporterIpfsConfig[] = [];
+let provider = 'https://ipfs.io/ipfs/';
+let hash = '';
 process.argv.forEach(function (val, index, array) {
-    if (index === 3 && val.includes('--hash=')) {
-        hash = val.split('--hash=')[1];
+    if (index === 3) {
+        if (val.length === 46) {
+            hash = val;
+        } else if (val.includes('--hash=')) {
+            hash = val.split('--hash=')[1];
+        }
     }
-    if (index === 4 && val.includes('--provider=')) {
-        ipfsProvider = val.split('--provider=')[1];
+    if (index === 4) {
+        if (val.includes('--provider=')) {
+            provider = val.split('--provider=')[1];
+        } else if (val.includes('http')) {
+            provider = val;
+        }
+
     }
 });
 
 if (hash) {
-    loadDeps({ ipfsProvider: ipfsProvider, dependencies: [hash] }, dependencies);
+    loadDeps({ provider, dependencies: [hash] }, dependencies);
 }
 
 if (!hash && fileService.isPresent(`${process.cwd() + `/${process.argv[3]}`}`)) {
@@ -63,9 +71,4 @@ if (!hash && fileService.isPresent(`${process.cwd() + '/.rxdi.json'}`)) {
     loadDeps(rxdiJson, dependencies);
 }
 
-DownloadDependencies(dependencies)
-    .pipe(take(1))
-    .subscribe(
-        () => console.log(JSON.stringify(dependencies, null, 2), '\nModules installed!'),
-        (e) => console.error(e)
-    );
+DownloadDependencies(dependencies).subscribe(() => console.log(JSON.stringify(dependencies, null, 2), '\nModules installed!'));
