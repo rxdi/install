@@ -7,8 +7,16 @@ import { Observable, combineLatest } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { ConfigService } from '@rxdi/core/services/config/config.service';
 
-
 const externalImporter = Container.get(ExternalImporter);
+const fileService = Container.get(FileService);
+let provider = externalImporter.defaultProvider;
+let hash = '';
+let json: PackagesConfig[];
+let modulesToDownload = [];
+let customConfigFile;
+let packageJsonConfigFile;
+let rxdiConfigFile;
+
 export interface PackagesConfig {
     dependencies: string[];
     provider: string;
@@ -32,17 +40,9 @@ export const DownloadDependencies = (dependencies: ExternalImporterIpfsConfig[])
     return Container.get(ExternalImporter).downloadIpfsModules(dependencies);
 };
 
-
 if (process.argv.toString().includes('-v') || process.argv.toString().includes('--verbose')) {
     Container.get(ConfigService).setConfig({ logger: { logging: true, hashes: true, date: true, exitHandler: true, fileService: true } });
 }
-
-const fileService = Container.get(FileService);
-
-let provider = 'https://ipfs.io/ipfs/';
-let hash = '';
-let json: PackagesConfig[];
-let modulesToDownload = [];
 
 process.argv.forEach(function (val, index, array) {
     if (index === 2) {
@@ -66,25 +66,31 @@ process.argv.forEach(function (val, index, array) {
     }
 });
 
+customConfigFile = `${process.cwd() + `/${process.argv[3]}`}`;
+packageJsonConfigFile = `${process.cwd() + '/package.json'}`;
+rxdiConfigFile = `${process.cwd() + '/.rxdi.json'}`;
+
 if (hash) {
     modulesToDownload = [DownloadDependencies(loadDeps({ provider, dependencies: [hash] }))];
 }
 
-if (!hash && fileService.isPresent(`${process.cwd() + `/${process.argv[3]}`}`)) {
-    json = require(`${process.cwd() + `/${process.argv[3]}`}`).ipfs;
+if (!hash && fileService.isPresent(customConfigFile)) {
+    json = require(customConfigFile).ipfs;
 }
 
-if (!hash && fileService.isPresent(`${process.cwd() + '/package.json'}`)) {
-    json = require(`${process.cwd() + '/package.json'}`).ipfs;
+if (!hash && fileService.isPresent(packageJsonConfigFile)) {
+    json = require(packageJsonConfigFile).ipfs;
 }
 
-if (!hash && fileService.isPresent(`${process.cwd() + '/.rxdi.json'}`)) {
-    json = require(`${process.cwd() + '/.rxdi.json'}`).ipfs;
+if (!hash && fileService.isPresent(rxdiConfigFile)) {
+    json = require(rxdiConfigFile).ipfs;
 }
+
 if (!hash) {
     json = json || [];
     modulesToDownload = [...modulesToDownload, ...json.map(json => DownloadDependencies(loadDeps(json)))];
 }
+
 combineLatest(modulesToDownload)
     .pipe(
         tap(() => hash ? Container.get(ExternalImporter).addPackageToJson(hash) : null),
