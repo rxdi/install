@@ -3,7 +3,8 @@
 import { FileService } from '@rxdi/core/services/file';
 import { Container } from '@rxdi/core/container/Container';
 import { ExternalImporter, ExternalImporterIpfsConfig } from '@rxdi/core/services/external-importer';
-import { Observable, combineLatest, tap } from 'rxjs';
+import { Observable, combineLatest } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { ConfigService } from '@rxdi/core/services/config/config.service';
 
 
@@ -44,7 +45,7 @@ let json: PackagesConfig[];
 let modulesToDownload = [];
 
 process.argv.forEach(function (val, index, array) {
-    if (index === 3) {
+    if (index === 2) {
         if (val.length === 46) {
             hash = val;
         } else if (val.includes('--hash=')) {
@@ -53,7 +54,7 @@ process.argv.forEach(function (val, index, array) {
             hash = val.split('-h=')[1];
         }
     }
-    if (index === 4) {
+    if (index === 3) {
         if (val.includes('--provider=')) {
             provider = val.split('--provider=')[1];
         } else if (val.includes('http')) {
@@ -80,8 +81,10 @@ if (!hash && fileService.isPresent(`${process.cwd() + '/package.json'}`)) {
 if (!hash && fileService.isPresent(`${process.cwd() + '/.rxdi.json'}`)) {
     json = require(`${process.cwd() + '/.rxdi.json'}`).ipfs;
 }
-json = json || [];
-modulesToDownload = [...modulesToDownload, ...json.map(json => DownloadDependencies(loadDeps(json)))];
+if (!hash) {
+    json = json || [];
+    modulesToDownload = [...modulesToDownload, ...json.map(json => DownloadDependencies(loadDeps(json)))];
+}
 combineLatest(modulesToDownload)
     .pipe(
         tap(() => hash ? Container.get(ExternalImporter).addPackageToJson(hash) : null),

@@ -5,6 +5,7 @@ const file_1 = require("@rxdi/core/services/file");
 const Container_1 = require("@rxdi/core/container/Container");
 const external_importer_1 = require("@rxdi/core/services/external-importer");
 const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
 const config_service_1 = require("@rxdi/core/services/config/config.service");
 const externalImporter = Container_1.Container.get(external_importer_1.ExternalImporter);
 exports.loadDeps = (jsonIpfs) => {
@@ -31,7 +32,7 @@ let hash = '';
 let json;
 let modulesToDownload = [];
 process.argv.forEach(function (val, index, array) {
-    if (index === 3) {
+    if (index === 2) {
         if (val.length === 46) {
             hash = val;
         }
@@ -42,7 +43,7 @@ process.argv.forEach(function (val, index, array) {
             hash = val.split('-h=')[1];
         }
     }
-    if (index === 4) {
+    if (index === 3) {
         if (val.includes('--provider=')) {
             provider = val.split('--provider=')[1];
         }
@@ -66,10 +67,12 @@ if (!hash && fileService.isPresent(`${process.cwd() + '/package.json'}`)) {
 if (!hash && fileService.isPresent(`${process.cwd() + '/.rxdi.json'}`)) {
     json = require(`${process.cwd() + '/.rxdi.json'}`).ipfs;
 }
-json = json || [];
-modulesToDownload = [...modulesToDownload, ...json.map(json => exports.DownloadDependencies(exports.loadDeps(json)))];
+if (!hash) {
+    json = json || [];
+    modulesToDownload = [...modulesToDownload, ...json.map(json => exports.DownloadDependencies(exports.loadDeps(json)))];
+}
 rxjs_1.combineLatest(modulesToDownload)
-    .pipe(rxjs_1.tap(() => hash ? Container_1.Container.get(external_importer_1.ExternalImporter).addPackageToJson(hash) : null), rxjs_1.tap(() => externalImporter.filterUniquePackages()))
+    .pipe(operators_1.tap(() => hash ? Container_1.Container.get(external_importer_1.ExternalImporter).addPackageToJson(hash) : null), operators_1.tap(() => externalImporter.filterUniquePackages()))
     .subscribe((c) => {
     console.log(JSON.stringify(c, null, 2), '\nModules installed!');
 }, e => console.error(e));
