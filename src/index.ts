@@ -3,7 +3,7 @@
 import { FileService } from '@rxdi/core/services/file';
 import { Container } from '@rxdi/core/container/Container';
 import { ExternalImporter, ExternalImporterIpfsConfig } from '@rxdi/core/services/external-importer';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest } from 'rxjs';
 import { ConfigService } from '@rxdi/core/services/config/config.service';
 
 export interface PackagesConfig {
@@ -11,17 +11,15 @@ export interface PackagesConfig {
     provider: string;
 }
 
-export const loadDeps = (currentPackage: PackagesConfig, dependencies: ExternalImporterIpfsConfig[]) => {
-    if (!currentPackage) {
+export const loadDeps = (jsonIpfs: PackagesConfig) => {
+    if (!jsonIpfs) {
         throw new Error('Missing ipfs config!');
     }
-    if (!currentPackage.provider) {
+    if (!jsonIpfs.provider) {
         throw new Error('Missing ipfsProvider package.json');
     }
-    const provider = currentPackage.provider;
-    if (currentPackage.dependencies) {
-        currentPackage.dependencies.map(hash => dependencies.push({ hash, provider }));
-    }
+    jsonIpfs.dependencies = jsonIpfs.dependencies || [];
+    return jsonIpfs.dependencies.map(hash => { return { hash, provider: jsonIpfs.provider }; });
 };
 
 export const DownloadDependencies = (dependencies: ExternalImporterIpfsConfig[]): Observable<any> => {
@@ -30,14 +28,15 @@ export const DownloadDependencies = (dependencies: ExternalImporterIpfsConfig[])
 
 
 if (process.argv.toString().includes('-v') || process.argv.toString().includes('--verbose')) {
-    Container.get(ConfigService).setConfig({ logger: { logging: true, hashes: true, date: true, exitHandler: true, fileService: true } })
+    Container.get(ConfigService).setConfig({ logger: { logging: true, hashes: true, date: true, exitHandler: true, fileService: true } });
 }
 
 const fileService = Container.get(FileService);
 
-const dependencies: ExternalImporterIpfsConfig[] = [];
 let provider = 'https://ipfs.io/ipfs/';
 let hash = '';
+let json: PackagesConfig[];
+let modulesToDownload;
 
 process.argv.forEach(function (val, index, array) {
     if (index === 3) {
@@ -60,25 +59,24 @@ process.argv.forEach(function (val, index, array) {
 
     }
 });
+
 if (hash) {
-    loadDeps({ provider, dependencies: [hash] }, dependencies);
+    modulesToDownload = [DownloadDependencies(loadDeps({ provider, dependencies: [hash] }))];
 }
 
 if (!hash && fileService.isPresent(`${process.cwd() + `/${process.argv[3]}`}`)) {
-    const customJson: PackagesConfig = require(`${process.cwd() + `/${process.argv[3]}`}`).ipfs;
-    loadDeps(customJson, dependencies);
+    json = require(`${process.cwd() + `/${process.argv[3]}`}`).ipfs;
 }
 
 if (!hash && fileService.isPresent(`${process.cwd() + '/package.json'}`)) {
-    const ipfsConfig: PackagesConfig = require(`${process.cwd() + '/package.json'}`).ipfs;
-    if (ipfsConfig) {
-        loadDeps(ipfsConfig, dependencies);
-    }
+    json = require(`${process.cwd() + '/package.json'}`).ipfs;
 }
 
 if (!hash && fileService.isPresent(`${process.cwd() + '/.rxdi.json'}`)) {
-    const rxdiJson: PackagesConfig = require(`${process.cwd() + '/.rxdi.json'}`).ipfs;
-    loadDeps(rxdiJson, dependencies);
+    json = require(`${process.cwd() + '/.rxdi.json'}`).ipfs;
 }
 
-DownloadDependencies(dependencies).subscribe(() => console.log(JSON.stringify(dependencies, null, 2), '\nModules installed!'));
+modulesToDownload = modulesToDownload || json.map(json => DownloadDependencies(loadDeps(json)));
+combineLatest(modulesToDownload)
+    .subscribe((c) => console.log(JSON.stringify(c, null, 2), '\nModules installed!'), e => console.error(e));
+
