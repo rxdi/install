@@ -1,6 +1,6 @@
 {
   "name": "@rxdi/install",
-  "version": "0.0.192",
+  "version": "0.0.193",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,14 +9,8 @@
   "bin": {
     "rxdi-install": "index.js"
   },
-  "ipfs": {
-    "ipfsProvider": "https://ipfs.io/ipfs/",
-    "dependencies": [
-      "QmWtJLqyokMZE37DgncpY5HhFvtFQieBzMPDQ318aJeTw6"
-    ]
-  },
-  "author": "",
-  "license": "ISC",
+  "author": "Kristiyan Tachev",
+  "license": "MIT",
   "dependencies": {
     "@rxdi/core": "^0.0.192",
     "bluebird": "^3.5.1",
