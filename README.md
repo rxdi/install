@@ -15,12 +15,12 @@ rxdi-install
 
 Will read `package.json` in particular `ipfs` object with properties:
 ```json
-  "ipfs": {
+  "ipfs": [{
     "provider": "https://ipfs.io/ipfs/",
     "dependencies": [
       "QmWtJLqyokMZE37DgncpY5HhFvtFQieBzMPDQ318aJeTw6"
     ]
-  },
+  }],
 ```
 
 #### Install single dependency:
