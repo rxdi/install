@@ -16,7 +16,7 @@
   "author": "Kristiyan Tachev",
   "license": "MIT",
   "dependencies": {
-    "@rxdi/core": "^0.4.26",
+    "@rxdi/core": "^0.4.28",
     "bluebird": "^3.5.1",
     "fs": "0.0.1-security",
     "glob": "^7.1.2",
